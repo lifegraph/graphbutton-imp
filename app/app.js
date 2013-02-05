@@ -10,6 +10,7 @@ var app = express();
 
 app.configure(function () {
   app.set('port', process.env.PORT || 3000); // sets up the port
+  app.set('host', process.env.HOST || ('localhost:' + app.get('port')));
   app.use(express.cookieParser());
   app.use(express.session({
     secret: "some arbitrary secret"
@@ -32,7 +33,7 @@ var fb = rem.connect('facebook.com', '1.0').configure({
 
 // The oauth middleware intercepts the callback url that we set when we
 // created the oauth middleware.
-var oauth = rem.oauth(fb, 'http://localhost:3000/oauth/callback/');
+var oauth = rem.oauth(fb, 'http://' + app.get('host') + '/oauth/callback/');
 app.use(oauth.middleware(function (req, res, next) {
   console.log("User is now authenticated.");
   res.redirect('/');
@@ -98,5 +99,5 @@ app.post('/action', function (req, res) {
  */
 
 app.listen(app.get('port'), function () {
-  console.log('Running on http://localhost:' + app.get('port'));
+  console.log('Running on http://' + app.get('host'));
 })
