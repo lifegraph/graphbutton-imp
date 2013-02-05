@@ -41,7 +41,7 @@ app.use(oauth.middleware(function (req, res, next) {
 // Login URL calls oauth.startSession, which redirects to an oauth URL.
 app.get('/login/', function (req, res) {
   oauth.startSession(req, {
-    scope: ['publish_action']
+    scope: ['publish_actions']
   }, function (url) {
     res.redirect(url);
   });
