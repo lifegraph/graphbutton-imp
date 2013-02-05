@@ -73,7 +73,8 @@ app.get('/', function (req, res) {
     res.write('GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.');
     res.write('</pre>POST to /action to submit your action:');
     res.write('<form action="/action" method="post"><button>Post to Open Graph</button></form>')
-    res.write('<a href="/logout/">Logout from GraphButton.</a>');
+    res.write('<p><a href="/login/">Change logged in user.</a></p>');
+    res.write('<p><a href="/logout/">Logout from GraphButton.</a></p>');
     res.end();
   })
 });
