@@ -77,8 +77,8 @@ app.get('/', function (req, res) {
 
 app.post('/action', function (req, res) {
   req.user('me').get(function (err, profile) {
-    req.user('me/timryan-org:game').post({
-      system: "http://samples.ogp.me/279268725514989"
+    req.user('me/' + process.env.FB_ACTION).post({
+      system: "http://samples.ogp.me/439213929482825"
     }, function (err, json) {
       res.setHeader('Content-Type', 'text/html');
       res.write('Response: <pre>');
