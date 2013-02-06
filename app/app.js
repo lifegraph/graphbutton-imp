@@ -66,7 +66,7 @@ app.get('/login/', oauth.login({
 app.get('/logout/', function (req, res, next) {
   var user = oauth.session(req);
   if (!user) {
-    next();
+    return next();
   }
 
   user('me').get(function (err, json) {
