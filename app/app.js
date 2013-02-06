@@ -63,8 +63,19 @@ app.get('/login/', oauth.login({
   scope: ['publish_actions']
 }));
 // Logout URL clears the user's session.
-app.get('/logout/', oauth.logout(function (req, res) {
-  globalUser = null;
+app.get('/logout/', function (req, res, next) {
+  var user = oauth.session(req);
+  if (!user) {
+    next();
+  }
+
+  user('me').get(function (err, json) {
+    if (json && json.id) {
+      delete keys[hashId(json.id)];
+    }
+    next();
+  })
+}, oauth.logout(function (req, res) {
   res.redirect('/');
 }));
 
