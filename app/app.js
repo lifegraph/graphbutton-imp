@@ -31,71 +31,96 @@ var fb = rem.connect('facebook.com', '1.0').configure({
   secret: process.env.FB_SECRET
 });
 
-// Global user.
-var globalUser;
+// User keys.
+var keys = {}, globalUser;
+
+var crypto = require('crypto');
+var keyskey = 'im not actually a beggar, im actually a... magic man';
+
+function hashId (id) {
+  return crypto.createHmac('sha1', keyskey).update(id).digest('hex');
+}
 
 // The oauth middleware intercepts the callback url that we set when we
 // created the oauth middleware.
 var oauth = rem.oauth(fb, 'http://' + app.get('host') + '/oauth/callback/');
 app.use(oauth.middleware(function (req, res, next) {
   console.log("User is now authenticated.");
-  globalUser = oauth.session(req);
-  res.redirect('/');
+  var user = oauth.session(req);
+  user('me').get(function (err, json) {
+    user.saveState(function (state) {
+      if (err || !json.id) {
+        res.redirect('/error');
+      }
+
+      keys[hashId(json.id)] = state;
+      res.redirect('/');
+    })
+  });
 }));
 // Login URL calls oauth.startSession, which redirects to an oauth URL.
-app.get('/login/', function (req, res) {
-  oauth.startSession(req, {
-    scope: ['publish_actions']
-  }, function (url) {
-    res.redirect(url);
-  });
-});
+app.get('/login/', oauth.login({
+  scope: ['publish_actions']
+}));
 // Logout URL clears the user's session.
-app.get('/logout/', function (req, res) {
-  oauth.clearSession(req, function (url) {
-    globalUser = null;
-    res.redirect('/');
-  });
-});
+app.get('/logout/', oauth.logout(function (req, res) {
+  globalUser = null;
+  res.redirect('/');
+}));
 
 /**
  * Routes
  */
 
+app.get('/error', function (req, res) {
+  res.send('There was an error logging into Facebook. Please retry.');
+});
+
 app.get('/', function (req, res) {
-  if (!globalUser) {
+  var user = oauth.session(req);
+  if (!user) {
     res.setHeader('Content-Type', 'text/html');
-    return res.send('<a href="/login/">Log in as the GraphButton user.</a>', 400);
+    return res.send('<a href="/login/">Log in to GraphButton.</a>', 400);
   }
 
-  globalUser('me').get(function (err, json) {
+  user('me').get(function (err, json) {
+    var path = '/action/' + hashId(json.id);
+
     res.setHeader('Content-Type', 'text/html');
     res.write('GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.');
-    res.write('</pre>POST to /action to submit your action:');
-    res.write('<form action="/action" method="post"><button>Post to Open Graph</button></form>')
-    res.write('<p><a href="/login/">Change logged in user.</a></p>');
+    res.write('</pre>POST to ' + path + ' to submit your action:');
+    res.write('<form action="' + path + '" method="post"><button>Post to Open Graph</button></form>')
     res.write('<p><a href="/logout/">Logout from GraphButton.</a></p>');
     res.end();
   })
 });
 
-app.post('/action', function (req, res) {
-  if (!globalUser) {
-    return res.send('No user logged in.', 400);
+app.post('/action/:user', function (req, res) {
+  if (!keys[req.params.user]) {
+    return res.json({message: 'Invalid or expired id.'}, 400);
   }
 
-  globalUser('me/' + process.env.FB_ACTION).post({
-    button: "http://samples.ogp.me/439213929482825"
-  }, function (err, json) {
-    res.setHeader('Content-Type', 'text/html');
-    res.write('Response: <pre>');
-    res.write(JSON.stringify(json, null, '\t'));
-    res.write('</pre>');
-    if (json.id) {
-      var url = 'https://facebook.com/' + json.id;
-      res.write('See action: <a href="' + url + '">' + url + '</a>');      
+  var user = oauth.restore(keys[req.params.user]);
+  user.validate(function (valid) {
+    if (!valid) {
+      delete keys[req.param.user];
+      oauth.clearSession(req);
+      return res.json({message: 'Expired Facebook credentials. Please log in again.'}, 400);
     }
-    res.end();
+
+    user('me/' + process.env.FB_ACTION).post({
+      button: process.env.FB_SAMPLE
+    }, function (err, json) {
+      res.setHeader('Content-Type', 'text/html');
+      res.write('Response: <pre>');
+      res.write(JSON.stringify(json, null, '\t'));
+      res.write('</pre>');
+      if (json.id) {
+        var url = 'https://facebook.com/' + json.id;
+        res.write('See action: <a href="' + url + '">' + url + '</a>');
+      }
+      res.end();
+    });
   });
 })
 
