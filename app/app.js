@@ -98,8 +98,8 @@ app.get('/', function (req, res) {
     var path = '/action/' + hashId(json.id);
 
     res.setHeader('Content-Type', 'text/html');
-    res.write('GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.');
-    res.write('</pre>POST to ' + path + ' to submit your action:');
+    res.write('<p>GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.</p>');
+    res.write('<p>POST to ' + path + ' to submit your action:</p>');
     res.write('<form action="' + path + '" method="post"><button>Post to Open Graph</button></form>')
     res.write('<p><a href="/logout/">Logout from GraphButton.</a></p>');
     res.end();
