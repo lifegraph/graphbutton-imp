@@ -79,6 +79,7 @@ app.get('/logout/', function (req, res, next) {
   res.redirect('/');
 }));
 
+
 /**
  * Routes
  */
