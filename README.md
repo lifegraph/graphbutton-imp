@@ -9,7 +9,7 @@
 
 ## Setting up an Arduino + Electric Imp Shield
 
-Make sure you have the Arduino Software installed: http://arduino.cc/en/main/software
+If you are running an Electric Imp as an Arduino shield, follow this section. First, make sure you have the Arduino Software installed: http://arduino.cc/en/main/software
 
 Open up the Arduino IDE. Make sure your Arduino works by going to File -> Examples -> Basic -> Blink. Upload the code to your Arduino by selecting the correct usb port on Tools->Serial Port and select the correct arduino board from Tools->board. Upload your the blink code by clicking on the upload button. 
 
