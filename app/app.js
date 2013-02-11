@@ -31,26 +31,31 @@ var fb = rem.connect('facebook.com', '1.0').configure({
   secret: process.env.FB_SECRET
 });
 
-// User keys.
-var keys = {}, globalUser;
+// Crudely store user access tokens in a global hash for the duration of
+// the Heroku app's life.
+//
+// In production, you would probably replace these with database-backed
+// functions. As a convenience, these are written as asynchronous functions,
+// though that's totally superfluous here.
 
-var crypto = require('crypto');
-var keyskey = 'im not actually a beggar, im actually a... magic man';
+var keys = {};
+  , keyskey = 'im not actually a beggar, im actually a... magic man';
 
 function hashUserId (id) {
-  return crypto.createHmac('sha1', keyskey).update(id).digest('hex');
+  return require('crypto').createHmac('sha1', keyskey).update(id).digest('hex');
 }
 
-function storeUserTokens (id, state) {
+function storeUserTokens (id, state, next) {
   keys[hashUserId(id)] = state;
+  next(null);
 }
 
-function restoreUserTokens (hash) {
-  return keys[hash];
+function restoreUserTokens (hash, next) {
+  next(null, keys[hash]);
 }
 
-function clearUserTokens (id) {
-  delete keys[hashUserId(id)];
+function clearUserTokens (id, next) {
+  next(!(delete keys[hashUserId(id)]));
 }
 
 // The oauth middleware intercepts the callback url that we set when we
@@ -65,8 +70,9 @@ app.use(oauth.middleware(function (req, res, next) {
         res.redirect('/error');
       }
 
-      storeUserTokens(json.id, state);
-      res.redirect('/');
+      storeUserTokens(json.id, state, function () {
+        res.redirect('/');
+      });
     })
   });
 }));
@@ -83,9 +89,10 @@ app.get('/logout/', function (req, res, next) {
 
   user('me').get(function (err, json) {
     if (json && json.id) {
-      clearUserTokens(json.id);
+      clearUserTokens(json.id, next);
+    } else {
+      next();
     }
-    next();
   })
 }, oauth.logout(function (req, res) {
   res.redirect('/');
@@ -120,30 +127,32 @@ app.get('/', function (req, res) {
 });
 
 app.post('/action/:user', function (req, res) {
-  if (!keys[req.params.user]) {
-    return res.json({message: 'Invalid or expired id.'}, 400);
-  }
-
-  var user = oauth.restore(keys[req.params.user]);
-  user.validate(function (valid) {
-    if (!valid) {
-      delete keys[req.param.user];
-      oauth.clearSession(req);
-      return res.json({message: 'Expired Facebook credentials. Please log in again.'}, 400);
+  restoreUserTokens(req.params.user, function (err, tokens) {
+    if (!tokens) {
+      return res.json({message: 'Invalid or expired id.'}, 400);
     }
 
-    user('me/' + process.env.FB_ACTION).post({
-      button: process.env.FB_SAMPLE
-    }, function (err, json) {
-      res.setHeader('Content-Type', 'text/html');
-      res.write('Response: <pre>');
-      res.write(JSON.stringify(json, null, '\t'));
-      res.write('</pre>');
-      if (json.id) {
-        var url = 'https://facebook.com/' + json.id;
-        res.write('See action: <a href="' + url + '">' + url + '</a>');
+    var user = oauth.restore(tokens);
+    user.validate(function (valid) {
+      if (!valid) {
+        delete keys[req.param.user];
+        oauth.clearSession(req);
+        return res.json({message: 'Expired Facebook credentials. Please log in again.'}, 400);
       }
-      res.end();
+
+      user('me/' + process.env.FB_ACTION).post({
+        button: process.env.FB_SAMPLE
+      }, function (err, json) {
+        res.setHeader('Content-Type', 'text/html');
+        res.write('Response: <pre>');
+        res.write(JSON.stringify(json, null, '\t'));
+        res.write('</pre>');
+        if (json.id) {
+          var url = 'https://facebook.com/' + json.id;
+          res.write('See action: <a href="' + url + '">' + url + '</a>');
+        }
+        res.end();
+      });
     });
   });
 })
