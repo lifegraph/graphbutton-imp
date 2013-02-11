@@ -25,7 +25,7 @@ Create an Electric Imp account at https://plan.electricimp.com/login. Next, down
 
 *Troubleshooting:* It helps to cover the Imp with your thumb and put your phone right up to the Imp to minimize outside light interference.
 
-<img src="http://www.instructables.com/files/deriv/FQI/UVAU/H9K2GBYV/FQIUVAUH9K2GBYV.LARGE.jpg" height="200">
+<img src="http://www.instructables.com/files/deriv/FQI/UVAU/H9K2GBYV/FQIUVAUH9K2GBYV.LARGE.jpg" height="350">
 
 Login to http://plan.electricimp.com. Click the “Code” panel in the menu at the top of the screen, then the “+” button. This creates for us a new Imp script. Give it the name “GraphButton”, then click OK. Next, the code editor is shown.
 
@@ -93,29 +93,29 @@ The source code for the GraphButton server is open source, so you can fork it an
 ```
 $ git clone https://github.com/lifegraph/graphbutton
 $ heroku create
-$ heroku config:add HOST=<heroku host>
+$ git push heroku master
+...
+$ heroku config:add HOST=<name of your heroku app>.herokuapp.com
 ```
 
 ### Creating a Facebook app
 
-Log into https://developers.facebook.com/apps. Create a new application. "GraphButton Test", "lifegraphlabs" is the namespace
-Copypasta your <heroku host> into the App Domains entry.
-Website with Facebook Login, site URL: http://<heroku host>/
-Save
-Copy app ID and app SECRET. paste to 
+Log into https://developers.facebook.com/apps. Create a new application, for example, "GraphButton Test" with "lifegraphlabs" being the namespace. Once created, copy your entire `_____.herokuapp.com` URL into the App Domains entry. Then click "Website with Facebook Login", and enter in your full `http://_____.herokuapp.com/` URL. Then click save.
+
+Copy your app ID and secret, and update your heroku configuration:
 
 ```
 $ heroku config:add FB_KEY=the key
 $ heroku config:add FB_SECRET=the secret
-$ heroku config:add FB_ACTION=the action
 ```
 
-Open Graph on the left. Click Getting Started. “press” a “button”. Probably select Number of units.
-Must be “button” or else the POST payload has to be changed
-Save changes and next
-Define object type: button. Savenext
-Data to Display, click “Press”..
-Click number, Save and Finish
+Open Graph on the left. Click Getting Started. Our code is set up for the verb "press" and the noun "button". (In particular, `app.js` is setup to expect a "button" noun.) Click through the next few panels, and select sensible preferences like displaying "Number of Units" and a "Number" for data to display. Once you're done with this process, click Save and Finish.
 
-Click your Press action “get code”
-copy “lifegraphlabs:press“ for the path
+While on the Open Graph panel, click the "Get Code" link for the Press action. We're looking for two things, the name of our action, e.g. "lifegraphlabs:press", and a sample link like http://samples.ogp.me/439213929482825. Once you have these, update your heroku configuration again.
+
+```
+$ heroku config:add FB_ACTION=the action
+$ heroku config.add FB_SAMPLE=the sample link
+```
+
+You can then run `heroku open` and run your own GraphButton server. Check the source of `app.js` for more configuration options.
