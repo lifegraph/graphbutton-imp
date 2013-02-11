@@ -26,6 +26,8 @@ app.configure(function () {
  * Facebook API
  */
 
+ console.log(process.env);
+
 var fb = rem.connect('facebook.com', '1.0').configure({
   key: process.env.FB_KEY,
   secret: process.env.FB_SECRET
