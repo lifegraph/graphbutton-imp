@@ -38,7 +38,7 @@ var fb = rem.connect('facebook.com', '1.0').configure({
 // functions. As a convenience, these are written as asynchronous functions,
 // though that's totally superfluous here.
 
-var keys = {};
+var keys = {}
   , keyskey = 'im not actually a beggar, im actually a... magic man';
 
 function hashUserId (id) {
