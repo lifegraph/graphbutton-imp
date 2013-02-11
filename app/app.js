@@ -45,16 +45,16 @@ function hashUserId (id) {
   return require('crypto').createHmac('sha1', keyskey).update(id).digest('hex');
 }
 
-function storeUserTokens (id, state, next) {
+function storeCredentials (id, state, next) {
   keys[hashUserId(id)] = state;
   next(null);
 }
 
-function restoreUserTokens (hash, next) {
+function restoreCredentials (hash, next) {
   next(null, keys[hash]);
 }
 
-function clearUserTokens (id, next) {
+function clearStoredCredentials (id, next) {
   next(!(delete keys[hashUserId(id)]));
 }
 
@@ -70,17 +70,18 @@ app.use(oauth.middleware(function (req, res, next) {
         res.redirect('/error');
       }
 
-      storeUserTokens(json.id, state, function () {
+      storeCredentials(json.id, state, function () {
         res.redirect('/');
       });
     })
   });
 }));
-// Login URL calls oauth.startSession, which redirects to an oauth URL.
+// Login route calls oauth.startSession, which redirects to an oauth URL.
 app.get('/login/', oauth.login({
   scope: ['publish_actions']
 }));
-// Logout URL clears the user's session.
+// Logout route clears the user's session.
+// Use middleware to clear the tokens from our tokens store as well.
 app.get('/logout/', function (req, res, next) {
   var user = oauth.session(req);
   if (!user) {
@@ -89,7 +90,7 @@ app.get('/logout/', function (req, res, next) {
 
   user('me').get(function (err, json) {
     if (json && json.id) {
-      clearUserTokens(json.id, next);
+      clearStoredCredentials(json.id, next);
     } else {
       next();
     }
@@ -119,7 +120,7 @@ app.get('/', function (req, res) {
 
     res.setHeader('Content-Type', 'text/html');
     res.write('<p>GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.</p>');
-    res.write('<p>POST to http://' + app.get('host') + path + ' to submit your action:</p>');
+    res.write('<p>POST to <a href="http://' + app.get('host') + path + '">http://' + app.get('host') + path + '</a> to submit your action:</p>');
     res.write('<form action="' + path + '" method="post"><button>Post to Open Graph</button></form>')
     res.write('<p><a href="/logout/">Logout from GraphButton.</a></p>');
     res.end();
@@ -127,17 +128,19 @@ app.get('/', function (req, res) {
 });
 
 app.post('/action/:user', function (req, res) {
-  restoreUserTokens(req.params.user, function (err, tokens) {
+  restoreCredentials(req.params.user, function (err, tokens) {
     if (!tokens) {
       return res.json({message: 'Invalid or expired id.'}, 400);
     }
 
+    // Attempt to restore the tokens. Validate whether the session remains valid.
     var user = oauth.restore(tokens);
     user.validate(function (valid) {
       if (!valid) {
-        delete keys[req.param.user];
-        oauth.clearSession(req);
-        return res.json({message: 'Expired Facebook credentials. Please log in again.'}, 400);
+        clearStoredCredentials(req.param.user, function () {
+          oauth.clearSession(req);
+          return res.json({message: 'Expired Facebook credentials. Please log in again.'}, 400);
+        });
       }
 
       user('me/' + process.env.FB_ACTION).post({
