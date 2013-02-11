@@ -37,8 +37,20 @@ var keys = {}, globalUser;
 var crypto = require('crypto');
 var keyskey = 'im not actually a beggar, im actually a... magic man';
 
-function hashId (id) {
+function hashUserId (id) {
   return crypto.createHmac('sha1', keyskey).update(id).digest('hex');
+}
+
+function storeUserTokens (id, state) {
+  keys[hashUserId(id)] = state;
+}
+
+function restoreUserTokens (hash) {
+  return keys[hash];
+}
+
+function clearUserTokens (id) {
+  delete keys[hashUserId(id)];
 }
 
 // The oauth middleware intercepts the callback url that we set when we
@@ -53,7 +65,7 @@ app.use(oauth.middleware(function (req, res, next) {
         res.redirect('/error');
       }
 
-      keys[hashId(json.id)] = state;
+      storeUserTokens(json.id, state);
       res.redirect('/');
     })
   });
@@ -71,7 +83,7 @@ app.get('/logout/', function (req, res, next) {
 
   user('me').get(function (err, json) {
     if (json && json.id) {
-      delete keys[hashId(json.id)];
+      clearUserTokens(json.id);
     }
     next();
   })
@@ -96,11 +108,11 @@ app.get('/', function (req, res) {
   }
 
   user('me').get(function (err, json) {
-    var path = '/action/' + hashId(json.id);
+    var path = '/action/' + hashUserId(json.id);
 
     res.setHeader('Content-Type', 'text/html');
     res.write('<p>GraphButton Demo! The current acting Facebook user is <a href="https:/facebook.com/' + json.id + '">' + json.id + '</a>.</p>');
-    res.write('<p>POST to ' + path + ' to submit your action:</p>');
+    res.write('<p>POST to http://' + app.get('host') + path + ' to submit your action:</p>');
     res.write('<form action="' + path + '" method="post"><button>Post to Open Graph</button></form>')
     res.write('<p><a href="/logout/">Logout from GraphButton.</a></p>');
     res.end();
