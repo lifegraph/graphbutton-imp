@@ -75,7 +75,11 @@ Go to the “Planner” panel via the top menu. Hover the only code box on your 
 
 Log into http://graphbutton.herokuapp.com/, then copy the action URL it gives you.
 
-In the Planner tab, click “Add Node” in the upper left and choose “HTTP Request” as the node type. Hover over the block to reveal the settings icon, and in the settings, set the request type to “POST” and paste the action URL. Finally, drag the + connection from the GraphButton block to the HTTP Request block.
+In the Planner tab, click “Add Node” in the upper left and choose “HTTP Request” as the node type. Hover over the block to reveal the settings icon, and in the settings, set the request type to “POST” and paste the action URL.
+
+![http://i.imgur.com/SV1s119.png](http://i.imgur.com/SV1s119.png)
+
+Finally, drag the + connection from the GraphButton block to the HTTP Request block.
 
 ![http://i.imgur.com/UjTFMIL.png](http://i.imgur.com/UjTFMIL.png)
 
