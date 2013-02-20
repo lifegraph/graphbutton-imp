@@ -3,10 +3,10 @@
 **What you’ll learn:** How to create a circuit that posts an action to your profile on the Open Graph.
 
 **List of components:**
-* An Electric Imp
-* An Electric Imp Shield
+* [An Electric Imp](https://www.sparkfun.com/products/11395)
+* [An Electric Imp Shield](https://www.sparkfun.com/products/11401)
 * [An Arduino Uno](https://www.sparkfun.com/products/11021)
-* A switch or some wire
+* A switch or a resistor
 
 ## Setting up an Arduino + Electric Imp Shield
 
