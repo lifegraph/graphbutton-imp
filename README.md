@@ -5,7 +5,7 @@
 **List of components:**
 * An Electric Imp
 * An Electric Imp Shield
-* [An Arduino](https://www.sparkfun.com/products/11021)
+* [An Arduino Uno](https://www.sparkfun.com/products/11021)
 * A switch or some wire
 
 ## Setting up an Arduino + Electric Imp Shield
